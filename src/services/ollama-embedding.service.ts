@@ -1,14 +1,10 @@
 import type { EmbeddingService } from '../models/index.js';
 import { config } from '../config/index.js';
 
-/**
- * Ollama Embedding Service
- * Generates embeddings using Ollama's local embedding models
- */
 export class OllamaEmbeddingService implements EmbeddingService {
   private readonly baseUrl: string;
   private readonly model: string;
-  private readonly dimensions: number = 768; // nomic-embed-text dimensions
+  private readonly dimensions: number = 768;
 
   constructor(
     baseUrl: string = config.ollama.baseUrl,
@@ -18,9 +14,6 @@ export class OllamaEmbeddingService implements EmbeddingService {
     this.model = model;
   }
 
-  /**
-   * Generate embedding for a single text
-   */
   async embed(text: string): Promise<number[]> {
     try {
       const response = await fetch(`${this.baseUrl}/api/embeddings`, {
@@ -54,12 +47,8 @@ export class OllamaEmbeddingService implements EmbeddingService {
     }
   }
 
-  /**
-   * Generate embeddings for multiple texts in batch
-   */
   async embedBatch(texts: string[]): Promise<number[][]> {
     try {
-      // Process in parallel for better performance
       const embeddings = await Promise.all(
         texts.map((text) => this.embed(text))
       );
@@ -72,16 +61,10 @@ export class OllamaEmbeddingService implements EmbeddingService {
     }
   }
 
-  /**
-   * Get the dimensionality of the embeddings
-   */
   getDimensions(): number {
     return this.dimensions;
   }
 
-  /**
-   * Check if Ollama is available and the model is loaded
-   */
   async checkHealth(): Promise<boolean> {
     try {
       const response = await fetch(`${this.baseUrl}/api/tags`);
