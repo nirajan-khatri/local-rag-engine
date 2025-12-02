@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import { config } from './config/index.js';
+import { initializeDatabase, closeDatabase } from './config/database.js';
+import { initializeVectorStore } from './config/chroma.js';
 
 const app = express();
 
@@ -27,13 +29,44 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
   });
 });
 
-// Start server
-const PORT = config.server.port;
-app.listen(PORT, () => {
-  console.log(`Personal Knowledge Base API running on port ${PORT}`);
-  console.log(`Environment: ${config.server.nodeEnv}`);
-  console.log(`Ollama URL: ${config.ollama.baseUrl}`);
-  console.log(`ChromaDB URL: ${config.chroma.url}`);
+// Initialize storage and start server
+async function startServer() {
+  try {
+    console.log('🚀 Starting Personal Knowledge Base API...\n');
+    
+    // Initialize database
+    await initializeDatabase();
+    
+    // Initialize vector store
+    await initializeVectorStore();
+    
+    // Start server
+    const PORT = config.server.port;
+    app.listen(PORT, () => {
+      console.log(`\n✅ Server running on port ${PORT}`);
+      console.log(`Environment: ${config.server.nodeEnv}`);
+      console.log(`Ollama URL: ${config.ollama.baseUrl}`);
+      console.log(`ChromaDB URL: ${config.chroma.url}`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Handle graceful shutdown
+process.on('SIGINT', async () => {
+  console.log('\n🛑 Shutting down gracefully...');
+  await closeDatabase();
+  process.exit(0);
 });
+
+process.on('SIGTERM', async () => {
+  console.log('\n🛑 Shutting down gracefully...');
+  await closeDatabase();
+  process.exit(0);
+});
+
+startServer();
 
 export default app;

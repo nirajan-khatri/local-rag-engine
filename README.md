@@ -62,14 +62,17 @@ cp .env.example .env
 # Edit .env if needed (defaults should work for local development)
 ```
 
-### 5. Initialize Database
+### 5. Initialize Database and Vector Store
 
 ```bash
 # Generate Prisma client
 npm run db:generate
 
-# Push schema to database
-npm run db:push
+# Run database migrations
+npm run db:migrate
+
+# Initialize storage systems (database + vector store)
+npm run init:storage
 ```
 
 ### 6. Start the Application

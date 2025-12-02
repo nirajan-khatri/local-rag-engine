@@ -46,7 +46,12 @@ const checks: ServiceCheck[] = [
     url: config.chroma.url,
     check: async () => {
       try {
-        const response = await fetch(`${config.chroma.url}/api/v1/heartbeat`);
+        // Try v2 API first (newer versions)
+        let response = await fetch(`${config.chroma.url}/api/v2/heartbeat`);
+        if (response.ok) return true;
+        
+        // Fallback to v1 API (older versions)
+        response = await fetch(`${config.chroma.url}/api/v1/heartbeat`);
         return response.ok;
       } catch (error) {
         return false;
