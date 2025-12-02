@@ -1,0 +1,52 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Document {
+  id          String   @id @default(uuid())
+  title       String
+  content     String   @db.Text
+  source      String?
+  url         String?
+  author      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  extractedAt DateTime
+  
+  tags        Tag[]
+  chunks      Chunk[]
+  
+  @@index([createdAt])
+  @@index([source])
+}
+
+model Chunk {
+  id          String   @id @default(uuid())
+  documentId  String
+  content     String   @db.Text
+  position    Int
+  startChar   Int
+  endChar     Int
+  tokenCount  Int
+  vectorId    String   @unique
+  
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  
+  @@index([documentId])
+  @@index([vectorId])
+}
+
+model Tag {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  documents Document[]
+  
+  @@index([name])
+}
