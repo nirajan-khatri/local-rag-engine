@@ -4,7 +4,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 
 export class URLDocumentProcessor implements DocumentProcessor {
-  private readonly timeout = 10000; // 10 second timeout
+  private readonly timeout = 10000;
 
   async process(input: DocumentInput): Promise<ProcessedDocument> {
     if (input.type !== 'url') {
@@ -15,19 +15,14 @@ export class URLDocumentProcessor implements DocumentProcessor {
       ? input.content 
       : input.content.toString('utf-8');
 
-    // Validate URL format
     if (!this.isValidUrl(url)) {
       throw new Error('Invalid URL format');
     }
 
     try {
-      // Fetch webpage content (Requirement 3.1)
       const html = await this.fetchWebpage(url);
-      
-      // Extract article content and metadata (Requirements 3.2, 3.3)
       const extracted = this.extractArticle(html, url);
       
-      // Handle non-article content gracefully (Requirement 3.5)
       if (!extracted.content || extracted.content.trim().length < 100) {
         throw new Error('URL does not contain sufficient article content. Content may be too short or not article-like.');
       }
@@ -41,17 +36,15 @@ export class URLDocumentProcessor implements DocumentProcessor {
           url: url,
           source: 'url',
         },
-        extractedAt: new Date(), // Fetch date (Requirement 3.3)
+        extractedAt: new Date(),
       };
     } catch (error) {
       if (error instanceof Error) {
-        // Re-throw our custom error messages
         if (error.message.includes('article content') || 
             error.message.includes('Invalid URL')) {
           throw error;
         }
         
-        // Handle unreachable URLs (Requirement 3.4)
         if (axios.isAxiosError(error)) {
           if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
             throw new Error(`URL is unreachable: ${url}`);
@@ -94,10 +87,8 @@ export class URLDocumentProcessor implements DocumentProcessor {
   private extractArticle(html: string, url: string): { title: string; content: string } {
     const $ = cheerio.load(html);
 
-    // Remove unwanted elements (navigation, ads, scripts, styles)
     $('script, style, nav, header, footer, aside, .advertisement, .ad, #comments').remove();
 
-    // Try to extract title from various sources
     let title = '';
     title = $('meta[property="og:title"]').attr('content') || '';
     if (!title) title = $('meta[name="twitter:title"]').attr('content') || '';
@@ -105,10 +96,8 @@ export class URLDocumentProcessor implements DocumentProcessor {
     if (!title) title = $('h1').first().text() || '';
     title = title.trim();
 
-    // Try to find main article content
     let content = '';
     
-    // Look for common article containers
     const articleSelectors = [
       'article',
       '[role="main"]',
@@ -130,12 +119,10 @@ export class URLDocumentProcessor implements DocumentProcessor {
       }
     }
 
-    // Fallback: extract from body if no article container found
     if (!content || content.trim().length < 100) {
       content = $('body').text();
     }
 
-    // Clean up whitespace
     content = content
       .replace(/\s+/g, ' ')
       .replace(/\n\s*\n/g, '\n\n')
